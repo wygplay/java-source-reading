@@ -374,7 +374,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * Returns a power of two size for the given target capacity.
+     * Returns a power of two size for the given target capacity. 其实就是实现的就是最接近并且大于或等于cap的2的幂次方数，例如 cap=7，返回8，cap=9，返回16
      */
     static final int tableSizeFor(int cap) {
         int n = cap - 1;

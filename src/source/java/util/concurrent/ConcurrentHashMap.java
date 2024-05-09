@@ -752,7 +752,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     @SuppressWarnings("unchecked")
     static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
-        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);
+        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);// 通过CAS操作获取数组中的元素
     }
 
     static final <K,V> boolean casTabAt(Node<K,V>[] tab, int i,
@@ -1015,13 +1015,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V> f; int n, i, fh;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
-            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {//没有hash冲突时的场景
                 if (casTabAt(tab, i, null,
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
             else if ((fh = f.hash) == MOVED)
-                tab = helpTransfer(tab, f);
+                tab = helpTransfer(tab, f);// resize操作时，插入数据时的处理
             else {
                 V oldVal = null;
                 synchronized (f) {
@@ -2612,7 +2612,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         Node<K,V> b; int n, sc;
         if (tab != null) {
             if ((n = tab.length) < MIN_TREEIFY_CAPACITY)
-                tryPresize(n << 1);
+                tryPresize(n << 1);// 数组长度小于64时选择扩容，而不是树化
             else if ((b = tabAt(tab, index)) != null && b.hash >= 0) {
                 synchronized (b) {
                     if (tabAt(tab, index) == b) {

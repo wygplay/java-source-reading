@@ -10,23 +10,23 @@ class ObjectTest {
 
     @Test
     void getClassTest() {
-        Person person = new Person();
-        Person student = new Student();
+        PersonInner person = new PersonInner();
+        PersonInner student = new StudentInner();
         assertEquals("lang.Person", person.getClass().getName());
         assertEquals("lang.Student", student.getClass().getName());
     }
 
     @Test
     void hashCodeTest() {
-        Person person = new Person(1, "w");
-        Person person1 = new Person(1, "w");
+        PersonInner person = new PersonInner(1, "w");
+        PersonInner person1 = new PersonInner(1, "w");
         assertEquals(person.hashCode(), person1.hashCode());
     }
 
     @Test
     void cloneTest() throws CloneNotSupportedException {
-        Person person = new Person(1, "Smith");
-        Person clonedPerson = person.clone();
+        PersonInner person = new PersonInner(1, "Smith");
+        PersonInner clonedPerson = person.clone();
         assertEquals(person, clonedPerson);
         assertEquals("Smith", clonedPerson.getName());
     }
@@ -69,16 +69,16 @@ class ObjectTest {
     }
 }
 
-class Person implements Cloneable {
+class PersonInner implements Cloneable {
 
     private int id;
     private String name;
 
-    public Person() {
+    public PersonInner() {
 
     }
 
-    public Person(int id, String name) {
+    public PersonInner(int id, String name) {
         this.id = id;
         this.name = name;
     }
@@ -103,7 +103,7 @@ class Person implements Cloneable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Person person = (Person) o;
+        PersonInner person = (PersonInner) o;
         return id == person.id && Objects.equals(name, person.name);
     }
 
@@ -112,13 +112,13 @@ class Person implements Cloneable {
         return Objects.hash(id, name);
     }
 
-    protected Person clone() throws CloneNotSupportedException {
-        Person person = (Person) super.clone();
+    protected PersonInner clone() throws CloneNotSupportedException {
+        PersonInner person = (PersonInner) super.clone();
         return person;
     }
 }
 
-class Student extends Person {
+class StudentInner extends PersonInner {
 
     private int score;
 }
