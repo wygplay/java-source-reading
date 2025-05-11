@@ -752,7 +752,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     @SuppressWarnings("unchecked")
     static final <K,V> Node<K,V> tabAt(Node<K,V>[] tab, int i) {
-        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);// 通过CAS操作获取数组中的元素
+        return (Node<K,V>)U.getObjectVolatile(tab, ((long)i << ASHIFT) + ABASE);// 具有volatile语义的unsafe直接内存操作
     }
 
     static final <K,V> boolean casTabAt(Node<K,V>[] tab, int i,
