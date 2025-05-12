@@ -2368,7 +2368,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int n = tab.length, stride;
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE; // subdivide range
-        if (nextTab == null) {            // initiating
+        if (nextTab == null) {            // initiating, 上层方法保证，只有单个线程会进入这里，所以不需要加锁
             try {
                 @SuppressWarnings("unchecked")
                 Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
@@ -2397,13 +2397,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 else if (U.compareAndSwapInt
                          (this, TRANSFERINDEX, nextIndex,
                           nextBound = (nextIndex > stride ?
-                                       nextIndex - stride : 0))) {
+                                       nextIndex - stride : 0))) {// 分段迁移
                     bound = nextBound;
-                    i = nextIndex - 1;
+                    i = nextIndex - 1;//[bound, i] 就是当前线程迁移的区间
                     advance = false;
                 }
             }
-            if (i < 0 || i >= n || i + n >= nextn) {
+            if (i < 0 || i >= n || i + n >= nextn) {// 这种情况表示迁移完毕，
                 int sc;
                 if (finishing) {
                     nextTable = null;
@@ -2418,13 +2418,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     i = n; // recheck before commit
                 }
             }
-            else if ((f = tabAt(tab, i)) == null)
-                advance = casTabAt(tab, i, null, fwd);
-            else if ((fh = f.hash) == MOVED)
+            else if ((f = tabAt(tab, i)) == null)//空桶
+                advance = casTabAt(tab, i, null, fwd);// 利用 forwardingnode 迁移
+            else if ((fh = f.hash) == MOVED)// 当前结点正在迁移中（forwardingnode)
                 advance = true; // already processed
             else {
                 synchronized (f) {
-                    if (tabAt(tab, i) == f) {
+                    if (tabAt(tab, i) == f) {// 再次检查，有可能头结点被其他线程修改，比如删除
                         Node<K,V> ln, hn;
                         if (fh >= 0) {
                             int runBit = fh & n;
@@ -3289,7 +3289,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * across threads, iteration terminates if a bounds checks fails
      * for a table read.
      */
-    static class Traverser<K,V> {
+    static class Traverser<K,V> {//弱一致性设计理念
         Node<K,V>[] tab;        // current table; updated if resized
         Node<K,V> next;         // the next entry to use
         TableStack<K,V> stack, spare; // to save/restore on ForwardingNodes
@@ -3316,24 +3316,24 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             for (;;) {
                 Node<K,V>[] t; int i, n;  // must use locals in checks
                 if (e != null)
-                    return next = e;
+                    return next = e;// 返回当前节点
                 if (baseIndex >= baseLimit || (t = tab) == null ||
                     (n = t.length) <= (i = index) || i < 0)
-                    return next = null;
-                if ((e = tabAt(t, i)) != null && e.hash < 0) {
-                    if (e instanceof ForwardingNode) {
+                    return next = null;// 越界了
+                if ((e = tabAt(t, i)) != null && e.hash < 0) {// e.hash < 0 表示正在扩容中或链表树化
+                    if (e instanceof ForwardingNode) {// 处理扩容时的遍历
                         tab = ((ForwardingNode<K,V>)e).nextTable;
                         e = null;
-                        pushState(t, i, n);
+                        pushState(t, i, n);// stack不为空
                         continue;
                     }
                     else if (e instanceof TreeBin)
-                        e = ((TreeBin<K,V>)e).first;
+                        e = ((TreeBin<K,V>)e).first;// 处理树化后的遍历
                     else
                         e = null;
                 }
                 if (stack != null)
-                    recoverState(n);
+                    recoverState(n);// 恢复状态，pushState()时保存的状态
                 else if ((index = i + baseSize) >= n)
                     index = ++baseIndex; // visit upper slots if present
             }

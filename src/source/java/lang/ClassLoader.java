@@ -402,7 +402,7 @@ public abstract class ClassLoader {
                 long t0 = System.nanoTime();
                 try {
                     if (parent != null) {
-                        c = parent.loadClass(name, false);
+                        c = parent.loadClass(name, false);// 双亲委派机制，找不到类时，先用父类加载器加载相应的类
                     } else {
                         c = findBootstrapClassOrNull(name);
                     }
