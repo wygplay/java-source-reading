@@ -905,10 +905,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             int rs = runStateOf(c);
 
             // Check if queue empty only if necessary.
-            if (rs >= SHUTDOWN &&
+            if (rs >= SHUTDOWN &&// 线程池处于不工作状态
                 ! (rs == SHUTDOWN &&
                    firstTask == null &&
-                   ! workQueue.isEmpty()))
+                   ! workQueue.isEmpty()))//例外情况，线程池关闭了，但是任务队列不为空，且没有新任务需要立即执行
                 return false;
 
             for (;;) {
@@ -916,6 +916,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 if (wc >= CAPACITY ||
                     wc >= (core ? corePoolSize : maximumPoolSize))
                     return false;
+                // 这个 CAS 操作是为了增加线程池中的工作线程数，但可能会失败，所以有了一层内置循环。而不是使用while去使用CAS进行设置，是为了维持线程数量
                 if (compareAndIncrementWorkerCount(c))
                     break retry;
                 c = ctl.get();  // Re-read ctl
@@ -954,13 +955,13 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     mainLock.unlock();
                 }
                 if (workerAdded) {
-                    t.start();
+                    t.start();// 成功创建线程并启动
                     workerStarted = true;
                 }
             }
         } finally {
             if (! workerStarted)
-                addWorkerFailed(w);
+                addWorkerFailed(w);// 如果线程创建失败，回滚
         }
         return workerStarted;
     }
@@ -1010,9 +1011,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         } finally {
             mainLock.unlock();
         }
-
+        // SHUTDOWN状态，要等待队列内任务全部完成; STOP要等待线程池线程数量为0，这里就是为了检查是否满足条件
         tryTerminate();
-
+        //进一步检查是否需要添加新的工作线程
         int c = ctl.get();
         if (runStateLessThan(c, STOP)) {
             if (!completedAbruptly) {
@@ -1020,9 +1021,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 if (min == 0 && ! workQueue.isEmpty())
                     min = 1;
                 if (workerCountOf(c) >= min)
-                    return; // replacement not needed
+                    return; // replacement not needed，因为当前线程池中已经有了足够的工作线程，并且当前工作线程已被移除
             }
-            addWorker(null, false);
+            addWorker(null, false);//线程异常退出进入此方法或线程池内线程数还没达到最小值，因此添加新的工作线程
         }
     }
 
@@ -1369,7 +1370,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             c = ctl.get();
         }
         if (isRunning(c) && workQueue.offer(command)) {
-            int recheck = ctl.get();
+            int recheck = ctl.get();// 入队后重新检查状态
             if (! isRunning(recheck) && remove(command))
                 reject(command);
             else if (workerCountOf(recheck) == 0)
