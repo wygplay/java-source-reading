@@ -776,7 +776,7 @@ public abstract class AbstractQueuedSynchronizer
                 if (next != null && next.waitStatus <= 0)
                     compareAndSetNext(pred, predNext, next);
             } else {
-                unparkSuccessor(node);
+                unparkSuccessor(node);// 当node被取消且是队头（注意head并不算是有效结点，通常获取到状态的结点会成为head，即不需要等待线程调度）时，唤醒下一个节点
             }
 
             node.next = node; // help GC
@@ -1853,7 +1853,7 @@ public abstract class AbstractQueuedSynchronizer
                 t = lastWaiter;
             }
             Node node = new Node(Thread.currentThread(), Node.CONDITION);
-            if (t == null)
+            if (t == null)// 条件队列初始化
                 firstWaiter = node;
             else
                 t.nextWaiter = node;
@@ -2036,7 +2036,7 @@ public abstract class AbstractQueuedSynchronizer
             int savedState = fullyRelease(node);
             int interruptMode = 0;
             while (!isOnSyncQueue(node)) {
-                LockSupport.park(this);
+                LockSupport.park(this);//
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
             }
