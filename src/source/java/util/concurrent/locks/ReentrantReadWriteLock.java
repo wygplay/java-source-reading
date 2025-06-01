@@ -555,9 +555,9 @@ public class ReentrantReadWriteLock
         final boolean tryWriteLock() {
             Thread current = Thread.currentThread();
             int c = getState();
-            if (c != 0) {
+            if (c != 0) {// c != 0，存在读锁或写锁（高位是读锁，低位是写锁）
                 int w = exclusiveCount(c);
-                if (w == 0 || current != getExclusiveOwnerThread())
+                if (w == 0 || current != getExclusiveOwnerThread())// 若w == 0，说明存在读锁；后一项则是确定当前线程是否持有锁
                     return false;
                 if (w == MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
